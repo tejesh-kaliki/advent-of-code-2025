@@ -4,20 +4,22 @@ pub fn run() {
     println!("Part 2: {}", part2(input));
 }
 
+fn parse_line(line: &str) -> Option<(i32, i32)> {
+    let (sign, rest) = match line.as_bytes().first()? {
+        b'L' => (-1, &line[1..]),
+        b'R' => (1, &line[1..]),
+        _ => return None,
+    };
+
+    Some((sign, rest.parse::<i32>().ok()?))
+}
+
 fn part1(input: &str) -> i32 {
     let mut counter = 50;
     let mut res = 0;
 
-    for line in input.lines() {
-        let (sign, num_str) = match line.chars().next() {
-            Some('L') => (-1, &line[1..]),
-            Some('R') => (1, &line[1..]),
-            _ => continue,
-        };
-
-        let value: i32 = num_str.parse().unwrap();
-        counter += sign * value;
-
+    for (sign, v) in input.lines().filter_map(parse_line) {
+        counter += sign * v;
         if counter % 100 == 0 {
             res += 1;
         }
@@ -26,24 +28,33 @@ fn part1(input: &str) -> i32 {
     res
 }
 
+fn count_multiples_in_range(range: i32, start: i32, end: i32) -> i32 {
+    // Ensure the divisor is valid (non-zero)
+    if range == 0 {
+        return 0;
+    }
+
+    // start is excluded, end is included => (start, end]
+    let (lo, hi) = if start < end {
+        (start + 1, end)
+    } else {
+        // Handle inverted ranges gracefully
+        (end, start - 1)
+    };
+
+    // Use Euclidean division, which aligns with the floor-based mathematical formula
+    hi.div_euclid(range) - (lo - 1).div_euclid(range)
+}
+
 fn part2(input: &str) -> i32 {
     let mut counter = 50;
     let mut res = 0;
 
-    for line in input.lines() {
-        let (sign, num_str) = match line.chars().next() {
-            Some('L') => (-1, &line[1..]),
-            Some('R') => (1, &line[1..]),
-            _ => continue,
-        };
-
-        let value: i32 = num_str.parse().unwrap();
-        for _ in 0..value {
-            counter += sign;
-            if counter % 100 == 0 {
-                res += 1;
-            }
-        }
+    for (sign, v) in input.lines().filter_map(parse_line) {
+        let start = counter;
+        let end = counter + sign * v;
+        res += count_multiples_in_range(100, start, end);
+        counter = end;
     }
 
     res
@@ -86,6 +97,6 @@ R48
 L5
 R60
 L55";
-        assert_eq!(part2(input), 5);
+        assert_eq!(part2(input), 4);
     }
 }
