@@ -27,10 +27,11 @@ fn is_repeated_str(s: &str, count: usize) -> bool {
         return false;
     }
 
-    let chunk = &s[..chunk_len];
-    s.as_bytes()
+    let chunk = &s.as_bytes()[..chunk_len];
+    s[chunk_len..]
+        .as_bytes()
         .chunks(chunk_len)
-        .all(|c| c == chunk.as_bytes())
+        .all(|c| c == chunk)
 }
 
 fn part1(ranges: &[(i64, i64)]) -> i64 {
