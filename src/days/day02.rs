@@ -1,7 +1,8 @@
 pub fn run() {
     let input = include_str!("../../inputs/day02.txt");
-    println!("Part 1: {}", part1(input));
-    println!("Part 2: {}", part2(input));
+    let parsed_input = parse_input(input);
+    println!("Part 1: {}", part1(&parsed_input));
+    println!("Part 2: {}", part2(&parsed_input));
 }
 
 fn parse_range(range_str: &str) -> (i64, i64) {
@@ -12,21 +13,32 @@ fn parse_range(range_str: &str) -> (i64, i64) {
     )
 }
 
-fn part1(input: &str) -> i64 {
+fn parse_input(input: &str) -> Vec<(i64, i64)> {
     let mut ranges: Vec<(i64, i64)> = input.trim().split(",").map(parse_range).collect();
-    ranges.sort();
+    ranges.sort_unstable();
+    ranges
+}
 
+fn is_repeated_str(s: &str, count: usize) -> bool {
+    let n = s.len();
+    let chunk_len = n / count;
+
+    if !n.is_multiple_of(count) {
+        return false;
+    }
+
+    let chunk = &s[..chunk_len];
+    s.as_bytes()
+        .chunks(chunk_len)
+        .all(|c| c == chunk.as_bytes())
+}
+
+fn part1(ranges: &[(i64, i64)]) -> i64 {
     let mut count = 0;
-    for (start, end) in ranges {
+    for &(start, end) in ranges.iter() {
         for i in start..=end {
-            let digits = i.to_string().len();
-            if digits % 2 != 0 {
-                continue;
-            }
-
-            let factor = (10 as i64).pow(digits as u32 / 2);
-            if i % (factor + 1) == 0 {
-                count += i
+            if is_repeated_str(&i.to_string(), 2) {
+                count += i;
             }
         }
     }
@@ -34,21 +46,14 @@ fn part1(input: &str) -> i64 {
     count
 }
 
-fn part2(input: &str) -> i64 {
-    let mut ranges: Vec<(i64, i64)> = input.trim().split(",").map(parse_range).collect();
-    ranges.sort();
-
+fn part2(ranges: &[(i64, i64)]) -> i64 {
     let mut count = 0;
-    for (start, end) in ranges {
+    for &(start, end) in ranges {
         for i in start..=end {
             let i_str = i.to_string();
             let digits = i_str.len();
-            for j in 1..digits {
-                if digits % j != 0 {
-                    continue;
-                }
-
-                if i_str[0..j].repeat(digits / j) == i_str {
+            for j in 2..=digits {
+                if is_repeated_str(&i_str, j) {
                     count += i;
                     break;
                 }
@@ -66,7 +71,8 @@ mod tests {
     #[test]
     fn test_part() {
         let input = "11-22,95-115,998-1012,1188511880-1188511890,222220-222224,1698522-1698528,446443-446449,38593856-38593862,565653-565659,824824821-824824827,2121212118-2121212124";
-        assert_eq!(part1(input), 1227775554);
-        assert_eq!(part2(input), 4174379265);
+        let parsed_input = parse_input(input);
+        assert_eq!(part1(&parsed_input), 1227775554);
+        assert_eq!(part2(&parsed_input), 4174379265);
     }
 }
