@@ -28,8 +28,7 @@ fn is_repeated_str(s: &str, count: usize) -> bool {
     }
 
     let chunk = &s.as_bytes()[..chunk_len];
-    s[chunk_len..]
-        .as_bytes()
+    s.as_bytes()[chunk_len..]
         .chunks(chunk_len)
         .all(|c| c == chunk)
 }
