@@ -6,20 +6,27 @@ pub fn run() {
     println!("Part 2: {}", part2(&input));
 }
 
-fn can_be_removed(grid: &[Vec<bool>], x: i32, y: i32) -> bool {
-    let (rows, cols) = (grid.len(), grid[0].len());
+static NEIGHBOURS: [(isize, isize); 8] = [
+    (-1, -1),
+    (0, -1),
+    (1, -1),
+    (-1, 0),
+    (1, 0),
+    (-1, 1),
+    (0, 1),
+    (1, 1),
+];
+
+fn can_be_removed(grid: &[Vec<bool>], rows: usize, cols: usize, x: usize, y: usize) -> bool {
     let mut surrounding_count = 0;
-    // Check in 8 adjacent cells
-    for dx in -1i32..=1 {
-        for dy in -1i32..=1 {
-            if dx == 0 && dy == 0 {
-                continue;
-            }
-            let px = x + dx;
-            let py = y + dy;
-            if px >= 0 && px < cols as i32 && py >= 0 && py < rows as i32 {
-                surrounding_count += grid[py as usize][px as usize] as i32;
-            }
+    let x = x as isize;
+    let y = y as isize;
+
+    for (dx, dy) in NEIGHBOURS {
+        let px = x + dx;
+        let py = y + dy;
+        if px >= 0 && px < cols as isize && py >= 0 && py < rows as isize {
+            surrounding_count += grid[py as usize][px as usize] as i32;
         }
     }
 
@@ -36,13 +43,9 @@ fn part1(input: &str) -> i64 {
     let (rows, cols) = (grid.len(), grid[0].len());
 
     let mut count = 0;
-    for y in 0i32..rows as i32 {
-        for x in 0i32..cols as i32 {
-            if !grid[y as usize][x as usize] {
-                continue;
-            }
-
-            if can_be_removed(&grid, x, y) {
+    for y in 0..rows {
+        for x in 0..cols {
+            if grid[y][x] && can_be_removed(&grid, rows, cols, x, y) {
                 count += 1;
             }
         }
@@ -62,15 +65,11 @@ fn part2(input: &str) -> i64 {
 
     let mut total_count = 0;
     loop {
-        let mut can_remove: Vec<(usize, usize)> = Vec::new();
-        for y in 0i32..rows as i32 {
-            for x in 0i32..cols as i32 {
-                if !grid[y as usize][x as usize] {
-                    continue;
-                }
-
-                if can_be_removed(&grid, x, y) {
-                    can_remove.push((x as usize, y as usize));
+        let mut can_remove = Vec::new();
+        for y in 0..rows {
+            for x in 0..cols {
+                if grid[y][x] && can_be_removed(&grid, rows, cols, x, y) {
+                    can_remove.push((x, y));
                     total_count += 1;
                 }
             }
