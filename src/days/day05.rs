@@ -2,8 +2,9 @@ use std::fs;
 
 pub fn run() {
     let input = fs::read_to_string("inputs/day05.txt").expect("Must read the file");
-    println!("Part 1: {}", part1(&input));
-    println!("Part 2: {}", part2(&input));
+    let (ranges, items) = parse_input(&input);
+    println!("Part 1: {}", part1(&ranges, &items));
+    println!("Part 2: {}", part2(&ranges));
 }
 
 fn parse_range(range_str: &str) -> (i64, i64) {
@@ -14,18 +15,36 @@ fn parse_range(range_str: &str) -> (i64, i64) {
     )
 }
 
-fn part1(input: &str) -> i16 {
+fn parse_input(input: &str) -> (Vec<(i64, i64)>, Vec<i64>) {
     let (ranges_str, items_str) = input.trim().split_once("\n\n").expect("Must split input");
 
-    let ranges: Vec<(i64, i64)> = ranges_str.lines().map(parse_range).collect();
+    let mut given_ranges: Vec<(i64, i64)> = ranges_str.lines().map(parse_range).collect();
+    given_ranges.sort_by_key(|&(start, _)| start);
 
-    let mut count = 0;
-    for item in items_str
+    let mut ranges = Vec::new();
+    for (start, end) in given_ranges {
+        match ranges.pop() {
+            None => ranges.push((start, end)),
+            Some((last_start, last_end)) if last_end >= start => {
+                ranges.push((last_start, last_end.max(end)))
+            }
+            Some(last_range) => ranges.extend_from_slice(&[last_range, (start, end)]),
+        }
+    }
+
+    let items = items_str
         .lines()
-        .map(|item| item.parse::<i64>().expect("Must be integer"))
-    {
-        for &(start, end) in &ranges {
-            if item >= start && item <= end {
+        .map(|item| item.parse().expect("Must be integer"))
+        .collect();
+
+    (ranges, items)
+}
+
+fn part1(ranges: &[(i64, i64)], items: &[i64]) -> i16 {
+    let mut count = 0;
+    for &item in items {
+        for &(start, end) in ranges {
+            if (start..=end).contains(&item) {
                 count += 1;
                 break;
             }
@@ -35,29 +54,8 @@ fn part1(input: &str) -> i16 {
     count
 }
 
-fn part2(input: &str) -> i64 {
-    let (ranges_str, _) = input.trim().split_once("\n\n").expect("Must split input");
-
-    let mut ranges: Vec<(i64, i64)> = ranges_str.lines().map(parse_range).collect();
-    ranges.sort_by_key(|(s, _)| *s);
-
-    let mut new_ranges = Vec::new();
-    for (start, end) in ranges {
-        match new_ranges.pop() {
-            None => new_ranges.push((start, end)),
-            Some((last_start, last_end)) if last_end >= start => {
-                new_ranges.push((last_start, last_end.max(end)))
-            }
-            Some(last_range) => new_ranges.extend_from_slice(&[last_range, (start, end)]),
-        }
-    }
-
-    let mut count = 0;
-    for (start, end) in new_ranges {
-        count += end - start + 1;
-    }
-
-    count
+fn part2(ranges: &[(i64, i64)]) -> i64 {
+    ranges.iter().map(|&(s, e)| e - s + 1).sum()
 }
 
 #[cfg(test)]
@@ -77,7 +75,8 @@ mod tests {
 11
 17
 32";
-        assert_eq!(part1(input), 3);
-        assert_eq!(part2(input), 14);
+        let (ranges, items) = parse_input(input);
+        assert_eq!(part1(&ranges, &items), 3);
+        assert_eq!(part2(&ranges), 14);
     }
 }
