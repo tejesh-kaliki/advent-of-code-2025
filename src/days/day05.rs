@@ -1,4 +1,4 @@
-use std::fs;
+use std::{cmp::Ordering, fs};
 
 pub fn run() {
     let input = fs::read_to_string("inputs/day05.txt").expect("Must read the file");
@@ -8,7 +8,7 @@ pub fn run() {
 }
 
 fn parse_range(range_str: &str) -> (i64, i64) {
-    let (s, e) = range_str.split_once("-").expect("Must be a valid range");
+    let (s, e) = range_str.split_once('-').expect("Must be a valid range");
     (
         s.parse().expect("Must be valid integer"),
         e.parse().expect("Must be valid integer"),
@@ -21,15 +21,15 @@ fn parse_input(input: &str) -> (Vec<(i64, i64)>, Vec<i64>) {
     let mut given_ranges: Vec<(i64, i64)> = ranges_str.lines().map(parse_range).collect();
     given_ranges.sort_by_key(|&(start, _)| start);
 
-    let mut ranges = Vec::new();
+    let mut ranges: Vec<(i64, i64)> = Vec::new();
     for (start, end) in given_ranges {
-        match ranges.pop() {
-            None => ranges.push((start, end)),
-            Some((last_start, last_end)) if last_end >= start => {
-                ranges.push((last_start, last_end.max(end)))
+        if let Some(last) = ranges.last_mut() {
+            if last.1 >= start - 1 {
+                last.1 = last.1.max(end);
+                continue;
             }
-            Some(last_range) => ranges.extend_from_slice(&[last_range, (start, end)]),
         }
+        ranges.push((start, end));
     }
 
     let items = items_str
@@ -40,18 +40,22 @@ fn parse_input(input: &str) -> (Vec<(i64, i64)>, Vec<i64>) {
     (ranges, items)
 }
 
-fn part1(ranges: &[(i64, i64)], items: &[i64]) -> i16 {
-    let mut count = 0;
-    for &item in items {
-        for &(start, end) in ranges {
-            if (start..=end).contains(&item) {
-                count += 1;
-                break;
+fn contains(ranges: &[(i64, i64)], x: i64) -> bool {
+    ranges
+        .binary_search_by(|&(s, e)| {
+            if x < s {
+                Ordering::Greater
+            } else if x > e {
+                Ordering::Less
+            } else {
+                Ordering::Equal
             }
-        }
-    }
+        })
+        .is_ok()
+}
 
-    count
+fn part1(ranges: &[(i64, i64)], items: &[i64]) -> usize {
+    items.iter().filter(|&&item| contains(ranges, item)).count()
 }
 
 fn part2(ranges: &[(i64, i64)]) -> i64 {
