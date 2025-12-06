@@ -1,9 +1,27 @@
-use std::fs;
+use std::{fs, time::Instant};
 
 pub fn run() {
-    let input = fs::read_to_string("inputs/day04.txt").expect("Must read the file");
-    println!("Part 1: {}", part1(&input));
-    println!("Part 2: {}", part2(&input));
+    let (input, t_input) = time!(fs::read_to_string("inputs/day04.txt").unwrap());
+    let (mut parsed, t_parse) = time!(parse_input(&input));
+    let (part1, t_part1) = time!(part1(&parsed));
+    let (part2, t_part2) = time!(part2(&mut parsed));
+
+    println!("Part 1: {}", part1);
+    println!("Part 2: {}", part2);
+
+    println!("Input time: {:?}", t_input);
+    println!("Parse time: {:?}", t_parse);
+    println!("Part 1 time: {:?}", t_part1);
+    println!("Part 2 time: {:?}", t_part2);
+    println!("Total time: {:?}", t_part2 + t_part1 + t_input + t_parse);
+}
+
+fn parse_input(input: &str) -> Vec<Vec<bool>> {
+    input
+        .trim()
+        .lines()
+        .map(|l| l.as_bytes().iter().map(|c| *c == b'@').collect())
+        .collect()
 }
 
 static NEIGHBOURS: [(isize, isize); 8] = [
@@ -33,13 +51,7 @@ fn can_be_removed(grid: &[Vec<bool>], rows: usize, cols: usize, x: usize, y: usi
     surrounding_count < 4
 }
 
-fn part1(input: &str) -> i64 {
-    let grid: Vec<Vec<bool>> = input
-        .trim()
-        .lines()
-        .map(|l| l.as_bytes().iter().map(|c| *c == b'@').collect())
-        .collect();
-
+fn part1(grid: &[Vec<bool>]) -> i64 {
     let (rows, cols) = (grid.len(), grid[0].len());
 
     let mut count = 0;
@@ -54,13 +66,7 @@ fn part1(input: &str) -> i64 {
     count
 }
 
-fn part2(input: &str) -> i64 {
-    let mut grid: Vec<Vec<bool>> = input
-        .trim()
-        .lines()
-        .map(|l| l.as_bytes().iter().map(|c| *c == b'@').collect())
-        .collect();
-
+fn part2(grid: &mut [Vec<bool>]) -> i64 {
     let (rows, cols) = (grid.len(), grid[0].len());
 
     let mut total_count = 0;
@@ -103,7 +109,8 @@ mod tests {
 @.@@@.@@@@
 .@@@@@@@@.
 @.@.@@@.@.";
-        assert_eq!(part1(input), 13);
-        assert_eq!(part2(input), 43);
+        let mut parsed = parse_input(input);
+        assert_eq!(part1(&parsed), 13);
+        assert_eq!(part2(&mut parsed), 43);
     }
 }

@@ -1,9 +1,22 @@
+use std::{fs, time::Instant};
+
 pub fn run() {
-    let input = include_str!("../../inputs/day03.txt");
-    println!("Part 1: {}", part1(input));
-    println!("Part 2: {}", part2(input));
+    let (input, t_input) = time!(fs::read_to_string("inputs/day03.txt").unwrap());
+    let (parsed, t_parse) = time!(input);
+    let (part1, t_part1) = time!(part1(&parsed));
+    let (part2, t_part2) = time!(part2(&parsed));
+
+    println!("Part 1: {}", part1);
+    println!("Part 2: {}", part2);
+
+    println!("Input time: {:?}", t_input);
+    println!("Parse time: {:?}", t_parse);
+    println!("Part 1 time: {:?}", t_part1);
+    println!("Part 2 time: {:?}", t_part2);
+    println!("Total time: {:?}", t_part2 + t_part1 + t_input + t_parse);
 }
 
+/// Line score is the maximum n-digit number possible by using the digits from line in order.
 fn find_line_score(line: &str, n: usize) -> i64 {
     let nums = line.as_bytes();
     let mut value: i64 = 0;

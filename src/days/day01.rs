@@ -1,7 +1,23 @@
+use std::{fs, time::Instant};
+
 pub fn run() {
-    let input = include_str!("../../inputs/day01.txt");
-    println!("Part 1: {}", part1(input));
-    println!("Part 2: {}", part2(input));
+    let (input, t_input) = time!(fs::read_to_string("inputs/day01.txt").unwrap());
+    let (parsed, t_parse) = time!(parse_input(&input));
+    let (part1, t_part1) = time!(part1(&parsed));
+    let (part2, t_part2) = time!(part2(&parsed));
+
+    println!("Part 1: {}", part1);
+    println!("Part 2: {}", part2);
+
+    println!("Input time: {:?}", t_input);
+    println!("Parse time: {:?}", t_parse);
+    println!("Part 1 time: {:?}", t_part1);
+    println!("Part 2 time: {:?}", t_part2);
+    println!("Total time: {:?}", t_part2 + t_part1 + t_input + t_parse);
+}
+
+fn parse_input(input: &str) -> Vec<(i32, i32)> {
+    input.lines().filter_map(parse_line).collect()
 }
 
 fn parse_line(line: &str) -> Option<(i32, i32)> {
@@ -14,11 +30,11 @@ fn parse_line(line: &str) -> Option<(i32, i32)> {
     Some((sign, rest.parse::<i32>().ok()?))
 }
 
-fn part1(input: &str) -> i32 {
+fn part1(input: &[(i32, i32)]) -> i32 {
     let mut counter = 50;
     let mut res = 0;
 
-    for (sign, v) in input.lines().filter_map(parse_line) {
+    for (sign, v) in input {
         counter += sign * v;
         if counter % 100 == 0 {
             res += 1;
@@ -46,11 +62,11 @@ fn count_multiples_in_range(range: i32, start: i32, end: i32) -> i32 {
     hi.div_euclid(range) - (lo - 1).div_euclid(range)
 }
 
-fn part2(input: &str) -> i32 {
+fn part2(input: &[(i32, i32)]) -> i32 {
     let mut counter = 50;
     let mut res = 0;
 
-    for (sign, v) in input.lines().filter_map(parse_line) {
+    for (sign, v) in input {
         let start = counter;
         let end = counter + sign * v;
         res += count_multiples_in_range(100, start, end);
@@ -76,7 +92,7 @@ L1
 L99
 R14
 L82";
-        assert_eq!(part1(input), 3)
+        assert_eq!(part1(&parse_input(input)), 3)
     }
     #[test]
     fn test_part2() {
@@ -90,13 +106,13 @@ L1
 L99
 R14
 L182";
-        assert_eq!(part2(input), 7);
+        assert_eq!(part2(&parse_input(input)), 7);
         let input = "L68
 L30
 R48
 L5
 R60
 L55";
-        assert_eq!(part2(input), 4);
+        assert_eq!(part2(&parse_input(input)), 4);
     }
 }

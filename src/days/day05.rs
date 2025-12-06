@@ -1,10 +1,19 @@
-use std::{cmp::Ordering, fs};
+use std::{cmp::Ordering, fs, time::Instant};
 
 pub fn run() {
-    let input = fs::read_to_string("inputs/day05.txt").expect("Must read the file");
-    let (ranges, items) = parse_input(&input);
-    println!("Part 1: {}", part1(&ranges, &items));
-    println!("Part 2: {}", part2(&ranges));
+    let (input, t_input) = time!(fs::read_to_string("inputs/day05.txt").unwrap());
+    let ((ranges, items), t_parse) = time!(parse_input(&input));
+    let (part1, t_part1) = time!(part1(&ranges, &items));
+    let (part2, t_part2) = time!(part2(&ranges));
+
+    println!("Part 1: {}", part1);
+    println!("Part 2: {}", part2);
+
+    println!("Input time: {:?}", t_input);
+    println!("Parse time: {:?}", t_parse);
+    println!("Part 1 time: {:?}", t_part1);
+    println!("Part 2 time: {:?}", t_part2);
+    println!("Total time: {:?}", t_part2 + t_part1 + t_parse + t_input);
 }
 
 fn parse_range(range_str: &str) -> (i64, i64) {
@@ -23,11 +32,11 @@ fn parse_input(input: &str) -> (Vec<(i64, i64)>, Vec<i64>) {
 
     let mut ranges: Vec<(i64, i64)> = Vec::new();
     for (start, end) in given_ranges {
-        if let Some(last) = ranges.last_mut() {
-            if last.1 >= start - 1 {
-                last.1 = last.1.max(end);
-                continue;
-            }
+        if let Some(last) = ranges.last_mut()
+            && last.1 >= start - 1
+        {
+            last.1 = last.1.max(end);
+            continue;
         }
         ranges.push((start, end));
     }

@@ -1,8 +1,19 @@
+use std::{fs, time::Instant};
+
 pub fn run() {
-    let input = include_str!("../../inputs/day02.txt");
-    let parsed_input = parse_input(input);
-    println!("Part 1: {}", part1(&parsed_input));
-    println!("Part 2: {}", part2(&parsed_input));
+    let (input, t_input) = time!(fs::read_to_string("inputs/day02.txt").unwrap());
+    let (parsed, t_parse) = time!(parse_input(&input));
+    let (part1, t_part1) = time!(part1(&parsed));
+    let (part2, t_part2) = time!(part2(&parsed));
+
+    println!("Part 1: {}", part1);
+    println!("Part 2: {}", part2);
+
+    println!("Input time: {:?}", t_input);
+    println!("Parse time: {:?}", t_parse);
+    println!("Part 1 time: {:?}", t_part1);
+    println!("Part 2 time: {:?}", t_part2);
+    println!("Total time: {:?}", t_part2 + t_part1 + t_input + t_parse);
 }
 
 fn parse_range(range_str: &str) -> (i64, i64) {
@@ -19,6 +30,7 @@ fn parse_input(input: &str) -> Vec<(i64, i64)> {
     ranges
 }
 
+/// Check if a string is repeated a certain number of times.
 fn is_repeated_str(s: &str, count: usize) -> bool {
     let n = s.len();
     let chunk_len = n / count;
