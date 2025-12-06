@@ -57,7 +57,7 @@ fn part1(grid: &[Vec<bool>]) -> i64 {
     let mut count = 0;
     for y in 0..rows {
         for x in 0..cols {
-            if grid[y][x] && can_be_removed(&grid, rows, cols, x, y) {
+            if grid[y][x] && can_be_removed(grid, rows, cols, x, y) {
                 count += 1;
             }
         }
@@ -74,7 +74,7 @@ fn part2(grid: &mut [Vec<bool>]) -> i64 {
         let mut can_remove = Vec::new();
         for y in 0..rows {
             for x in 0..cols {
-                if grid[y][x] && can_be_removed(&grid, rows, cols, x, y) {
+                if grid[y][x] && can_be_removed(grid, rows, cols, x, y) {
                     can_remove.push((x, y));
                     total_count += 1;
                 }
