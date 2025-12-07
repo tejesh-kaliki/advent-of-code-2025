@@ -12,6 +12,7 @@ fn main() {
         "4" => days::day04::run(),
         "5" => days::day05::run(),
         "6" => days::day06::run(),
+        "7" => days::day07::run(),
         _ => println!("Unknown day"),
     }
 }
