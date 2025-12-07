@@ -25,8 +25,8 @@ fn parse_input(input: &str) -> Grid {
     let lines = input
         .trim()
         .lines()
+        .skip_while(|line| !line.contains('S')) // It should be in first row, but just to be sure.
         .map(|line| line.as_bytes())
-        .skip_while(|line| !line.contains(&b'S')) // It should be in first row, but just to be sure.
         .collect::<Vec<_>>();
     let height = lines.len();
     let width = lines[0].len();
