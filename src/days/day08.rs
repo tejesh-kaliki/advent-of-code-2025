@@ -1,28 +1,56 @@
-use std::{
-    cmp::Reverse,
-    collections::{BinaryHeap, HashSet},
-    fs,
-    time::Instant,
-};
+use std::{cmp::Reverse, collections::BinaryHeap, fs, time::Instant};
 
 pub fn run() {
     let (input, t_input) = time!(fs::read_to_string("inputs/day08.txt").unwrap());
-    let (points, t_parse) = time!(parse_input(&input));
-    let (part1, t_part1) = time!(part1(&points, 1000));
-    let (part2, t_part2) = time!(part2(&points));
+    let ((mut pairs_heap, points), t_parse) = time!(parse_input(&input));
+    let ((part1, part2), t_part1_and_2) = time!(solve_both_parts(&mut pairs_heap, &points, 1000));
 
     println!("Part 1: {}", part1);
     println!("Part 2: {}", part2);
 
     println!("Input time: {:?}", t_input);
     println!("Parse time: {:?}", t_parse);
-    println!("Part 1 time: {:?}", t_part1);
-    println!("Part 2 time: {:?}", t_part2);
-    println!("Total time: {:?}", t_part2 + t_part1 + t_parse + t_input);
+    println!("Part 1 & 2 time: {:?}", t_part1_and_2);
+    println!("Total time: {:?}", t_part1_and_2 + t_parse + t_input);
 }
 
-fn parse_input(input: &str) -> Vec<[i64; 3]> {
-    input
+struct DSU {
+    parent: Vec<usize>,
+    size: Vec<usize>,
+}
+
+impl DSU {
+    fn new(n: usize) -> Self {
+        DSU {
+            parent: (0..n).collect(),
+            size: vec![1; n],
+        }
+    }
+
+    fn find(&mut self, x: usize) -> usize {
+        if self.parent[x] != x {
+            self.parent[x] = self.find(self.parent[x]);
+        }
+        self.parent[x]
+    }
+
+    fn union(&mut self, x: usize, y: usize) {
+        let root_x = self.find(x);
+        let root_y = self.find(y);
+        if root_x != root_y {
+            let (smaller, larger) = if self.size[root_x] < self.size[root_y] {
+                (root_x, root_y)
+            } else {
+                (root_y, root_x)
+            };
+            self.parent[smaller] = larger;
+            self.size[larger] += self.size[smaller];
+        }
+    }
+}
+
+fn parse_input(input: &str) -> (BinaryHeap<(Reverse<i64>, usize, usize)>, Vec<[i64; 3]>) {
+    let points: Vec<[i64; 3]> = input
         .trim_end()
         .lines()
         .map(|line| line.splitn(3, ',').map(|s| s.parse().unwrap()))
@@ -33,106 +61,68 @@ fn parse_input(input: &str) -> Vec<[i64; 3]> {
                 iter.next().unwrap(),
             ]
         })
-        .collect::<Vec<_>>()
-}
-
-fn part1(points: &[[i64; 3]], n: usize) -> i64 {
-    let mut pairs_heap: BinaryHeap<(Reverse<i128>, usize, usize)> = BinaryHeap::new();
-
-    for (i, p1) in points.iter().enumerate() {
-        if i == 0 {
-            continue;
-        }
-        for (j, p2) in points.iter().take(i).enumerate() {
-            let (dx, dy, dz) = (
-                (p1[0] - p2[0]) as i128,
-                (p1[1] - p2[1]) as i128,
-                (p1[2] - p2[2]) as i128,
-            );
-            let dist = dx * dx + dy * dy + dz * dz;
-            pairs_heap.push((Reverse(dist), i, j));
-        }
-    }
-
-    let mut groups: Vec<HashSet<usize>> = Vec::new();
-    for _ in 0..n {
-        let (_, i, j) = pairs_heap.pop().unwrap();
-
-        let i_idx = groups.iter().position(|group| group.contains(&i));
-        let j_idx = groups.iter().position(|group| group.contains(&j));
-
-        if let (Some(i_idx), Some(j_idx)) = (i_idx, j_idx) {
-            if i_idx != j_idx {
-                let cloned = groups[j_idx].clone();
-                groups[i_idx].extend(cloned);
-                groups.remove(j_idx);
-            }
-        } else if let Some(i_idx) = i_idx {
-            groups[i_idx].insert(j);
-        } else if let Some(j_idx) = j_idx {
-            groups[j_idx].insert(i);
-        } else {
-            let mut group = HashSet::new();
-            group.insert(i);
-            group.insert(j);
-            groups.push(group);
-        }
-    }
-
-    let mut counts = groups
-        .iter()
-        .map(|group| group.len() as i64)
         .collect::<Vec<_>>();
-    counts.sort_by_key(|x| Reverse(*x));
-    counts.iter().take(3).product()
-}
 
-fn part2(points: &[[i64; 3]]) -> i64 {
-    let mut pairs_heap: BinaryHeap<(Reverse<i128>, usize, usize)> = BinaryHeap::new();
+    let mut pairs_heap = BinaryHeap::with_capacity(points.len() * (points.len() - 1) / 2);
 
-    for (i, p1) in points.iter().enumerate() {
+    for (i, &p1) in points.iter().enumerate() {
         if i == 0 {
             continue;
         }
-        for (j, p2) in points.iter().take(i).enumerate() {
-            let (dx, dy, dz) = (
-                (p1[0] - p2[0]) as i128,
-                (p1[1] - p2[1]) as i128,
-                (p1[2] - p2[2]) as i128,
-            );
+        for (j, &p2) in points.iter().take(i).enumerate() {
+            let dx = p1[0] - p2[0];
+            let dy = p1[1] - p2[1];
+            let dz = p1[2] - p2[2];
             let dist = dx * dx + dy * dy + dz * dz;
             pairs_heap.push((Reverse(dist), i, j));
         }
     }
 
-    let mut groups: Vec<HashSet<usize>> = Vec::new();
-    loop {
-        let (_, i, j) = pairs_heap.pop().unwrap();
+    (pairs_heap, points)
+}
 
-        let i_idx = groups.iter().position(|group| group.contains(&i));
-        let j_idx = groups.iter().position(|group| group.contains(&j));
-
-        if let (Some(i_idx), Some(j_idx)) = (i_idx, j_idx) {
-            if i_idx != j_idx {
-                let cloned = groups[j_idx].clone();
-                groups[i_idx].extend(cloned);
-                groups.remove(j_idx);
-            }
-        } else if let Some(i_idx) = i_idx {
-            groups[i_idx].insert(j);
-        } else if let Some(j_idx) = j_idx {
-            groups[j_idx].insert(i);
-        } else {
-            let mut group = HashSet::new();
-            group.insert(i);
-            group.insert(j);
-            groups.push(group);
+fn solve_both_parts(
+    pairs_heap: &mut BinaryHeap<(Reverse<i64>, usize, usize)>,
+    points: &[[i64; 3]],
+    n: usize,
+) -> (i64, i64) {
+    let mut dsu = DSU::new(points.len());
+    let mut ids = vec![false; points.len()];
+    let mut seen = 0;
+    let mut iteration = 0;
+    while let Some((_, i, j)) = pairs_heap.pop() {
+        if !ids[i] {
+            seen += 1;
+            ids[i] = true;
+        }
+        if !ids[j] {
+            seen += 1;
+            ids[j] = true;
         }
 
-        if groups.len() == 1 && groups[0].len() == points.len() {
-            return points[i][0] * points[j][0];
+        if seen == points.len() {
+            let mut counts = dsu
+                .parent
+                .iter()
+                .enumerate()
+                .filter(|&(i, &p)| i == p)
+                .map(|(i, _)| dsu.size[i] as i64)
+                .collect::<Vec<_>>();
+
+            counts.select_nth_unstable_by(2, |a, b| b.cmp(a));
+            let part1_result = counts[..3].iter().product::<i64>();
+            let part2_result = points[i][0] * points[j][0];
+            return (part1_result, part2_result);
+        }
+
+        // For part 1
+        if iteration < n {
+            dsu.union(i, j);
+            iteration += 1;
         }
     }
+
+    unreachable!("heap exhausted before covering all points")
 }
 
 #[cfg(test)]
@@ -161,8 +151,7 @@ mod tests {
 862,61,35
 984,92,344
 425,690,689";
-        let points = parse_input(input);
-        assert_eq!(part1(&points, 10), 40);
-        assert_eq!(part2(&points), 25272);
+        let (mut pairs_heap, points) = parse_input(input);
+        assert_eq!(solve_both_parts(&mut pairs_heap, &points, 10), (40, 25272));
     }
 }
