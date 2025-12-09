@@ -30,45 +30,31 @@ fn is_inside_bounds(points: &[(i32, i32)], i: usize, j: usize) -> bool {
     let (min_y, max_y) = (y1.min(y2), y1.max(y2));
 
     for window in points[j..=j + points.len() / 2].windows(2) {
-        if let Some(value) = is_line_in_bound(min_x, max_x, min_y, max_y, window) {
-            return value;
+        if line_crosses(min_x, max_x, min_y, max_y, window[0], window[1]) {
+            return true;
         }
     }
 
     false
 }
 
-fn is_line_in_bound(
+fn line_crosses(
     min_x: i32,
     max_x: i32,
     min_y: i32,
     max_y: i32,
-    window: &[(i32, i32)],
-) -> Option<bool> {
-    let (px1, py1) = window[0];
-    let (px2, py2) = window[1];
-
-    // Horizontal line
-    if px1 == px2 {
-        let (py1, py2) = if py1 > py2 { (py2, py1) } else { (py1, py2) };
-        if px1 > min_x
-            && px1 < max_x
-            && ((py1 <= min_y && py2 > min_y) || (py1 < max_y && py2 >= max_y))
-        {
-            return Some(true);
-        }
+    (x1, y1): (i32, i32),
+    (x2, y2): (i32, i32),
+) -> bool {
+    if x1 == x2 {
+        // vertical segment
+        let (y1, y2) = if y1 > y2 { (y2, y1) } else { (y1, y2) };
+        x1 > min_x && x1 < max_x && ((y1 <= min_y && y2 > min_y) || (y1 < max_y && y2 >= max_y))
+    } else {
+        // horizontal segment
+        let (x1, x2) = if x1 > x2 { (x2, x1) } else { (x1, x2) };
+        y1 > min_y && y1 < max_y && ((x1 <= min_x && x2 > min_x) || (x1 < max_x && x2 >= max_x))
     }
-    // Vertical line
-    else if py1 == py2 {
-        let (px1, px2) = if px1 > px2 { (px2, px1) } else { (px1, px2) };
-        if py1 > min_y
-            && py1 < max_y
-            && ((px1 <= min_x && px2 > min_x) || (px1 < max_x && px2 >= max_x))
-        {
-            return Some(true);
-        }
-    }
-    None
 }
 
 fn solve_both_parts(points: &[(i32, i32)]) -> (i64, i64) {
